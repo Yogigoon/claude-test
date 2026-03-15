@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔮 무료 타로카드 운세</title>
+<style>
+  :root {
+    --bg: #0d0a1a;
+    --card-bg: #1a1230;
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --purple: #6b3fa0;
+    --purple-light: #9b6fd0;
+    --text: #e8dfc8;
+    --text-dim: #9a8fa0;
+    --panel: #150e28;
+    --border: #3a2a5a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+  }
+  /* Header */
+  header {
+    text-align: center;
+    padding: 2rem 1rem 1rem;
+    background: linear-gradient(180deg, #0a0718 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 2.4rem;
+    color: var(--gold);
+    text-shadow: 0 0 20px #c9a84c88;
+    letter-spacing: 3px;
+  }
+  header p { color: var(--text-dim); margin-top: .4rem; font-size: .95rem; }
+  /* Nav tabs */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: .5rem;
+    padding: 1rem;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: .5rem 1.2rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: .9rem;
+    transition: all .3s;
+  }
+  .tab-btn.active, .tab-btn:hover {
+    background: var(--purple);
+    border-color: var(--purple-light);
+    color: #fff;
+  }
+  /* Screens */
+  .screen { display: none; padding: 1rem; max-width: 1200px; margin: 0 auto; }
+  .screen.active { display: block; }
+  /* Spread selection */
+  .spread-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .spread-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all .3s;
+  }
+  .spread-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px #c9a84c33;
+  }
+  .spread-card .icon { font-size: 2.5rem; margin-bottom: .8rem; }
+  .spread-card h3 { color: var(--gold); margin-bottom: .5rem; }
+  .spread-card p { color: var(--text-dim); font-size: .85rem; }
+  /* Reading area */
+  #reading-area { text-align: center; }
+  .reading-info {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+  .reading-info h2 { color: var(--gold); font-size: 1.1rem; }
+  .reading-info span { color: var(--text-dim); font-size: .85rem; }
+  .btn {
+    background: var(--purple);
+    border: none;
+    color: #fff;
+    padding: .5rem 1.2rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: .9rem;
+    transition: all .2s;
+  }
+  .btn:hover { background: var(--purple-light); }
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), #8b6820);
+    color: #0d0a1a;
+    font-weight: bold;
+  }
+  .btn-gold:hover { background: linear-gradient(135deg, var(--gold-light), var(--gold)); }
+  /* Deck grid */
+  .deck-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 6px;
+    margin-bottom: 1.5rem;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 8px;
+    background: rgba(0,0,0,.2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .deck-grid::-webkit-scrollbar { width: 6px; }
+  .deck-grid::-webkit-scrollbar-track { background: transparent; }
+  .deck-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  /* Card in deck */
+  .deck-card {
+    width: 100%;
+    aspect-ratio: 2/3;
+    perspective: 600px;
+    cursor: pointer;
+  }
+  .deck-card-inner {
+    width: 100%; height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform .6s;
+    border-radius: 6px;
+  }
+  .deck-card.flipped .deck-card-inner { transform: rotateY(180deg); }
+  .deck-card.selected .deck-card-inner { transform: rotateY(180deg) translateY(-4px); }
+  .card-face, .card-back {
+    position: absolute;
+    width: 100%; height: 100%;
+    backface-visibility: hidden;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: .55rem;
+    text-align: center;
+    padding: 2px;
+    border: 1px solid transparent;
+  }
+  .card-back {
+    background: linear-gradient(135deg, #1a0a3a 0%, #0d0520 50%, #1a0a3a 100%);
+    border-color: var(--purple);
+    background-image:
+      radial-gradient(circle at 50% 50%, rgba(107,63,160,.3) 0%, transparent 60%),
+      linear-gradient(135deg, #1a0a3a 0%, #0d0520 50%, #1a0a3a 100%);
+  }
+  .card-back::after {
+    content: '✦';
+    font-size: 1.2rem;
+    color: var(--gold);
+    opacity: .6;
+  }
+  .card-face {
+    transform: rotateY(180deg);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: .5rem;
+    overflow: hidden;
+  }
+  .card-face .card-symbol { font-size: 1.1rem; margin-bottom: 2px; }
+  .card-face .card-name { font-size: .45rem; line-height: 1.2; }
+  .deck-card.selected .card-face { border-color: var(--gold); box-shadow: 0 0 8px var(--gold); }
+  .deck-card:hover:not(.selected):not(.disabled) .card-back { border-color: var(--gold-light); }
+  .deck-card.disabled { opacity: .3; cursor: not-allowed; pointer-events: none; }
+  /* Slot area */
+  .slots-row {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .slot {
+    width: 90px;
+    aspect-ratio: 2/3;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: .7rem;
+    transition: all .3s;
+    position: relative;
+  }
+  .slot.filled { border-color: var(--gold); border-style: solid; }
+  .slot .slot-label {
+    position: absolute;
+    bottom: -22px;
+    font-size: .65rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .slot .slot-card-symbol { font-size: 1.6rem; }
+  .slot .slot-card-name { font-size: .6rem; margin-top: 4px; color: var(--gold); text-align: center; padding: 0 4px; }
+  /* Result panel */
+  #result-panel {
+    display: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    text-align: left;
+  }
+  #result-panel.show { display: block; animation: fadeIn .5s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .result-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-header h2 { color: var(--gold); font-size: 1.3rem; margin-bottom: .3rem; }
+  .selected-cards-display {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .result-card-item {
+    text-align: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    min-width: 120px;
+    max-width: 160px;
+  }
+  .result-card-item .big-symbol { font-size: 2.5rem; margin-bottom: .5rem; }
+  .result-card-item h3 { color: var(--gold); font-size: .9rem; margin-bottom: .3rem; }
+  .result-card-item .position-name { color: var(--text-dim); font-size: .75rem; }
+  .fortune-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .fortune-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+  .fortune-item h4 {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    color: var(--gold);
+    margin-bottom: .6rem;
+    font-size: .95rem;
+  }
+  .fortune-item p { color: var(--text); font-size: .82rem; line-height: 1.6; }
+  .stars { color: #f0d080; font-size: .9rem; margin-left: auto; }
+  /* Card detail panel */
+  .card-detail {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-top: 1rem;
+  }
+  .card-detail h3 { color: var(--gold); margin-bottom: .5rem; }
+  .card-detail .keywords {
+    display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .8rem;
+  }
+  .keyword-tag {
+    background: rgba(107,63,160,.3);
+    border: 1px solid var(--purple);
+    color: var(--text);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: .75rem;
+  }
+  .card-detail p { color: var(--text-dim); font-size: .85rem; line-height: 1.7; }
+  /* Card library */
+  .library-header {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .filter-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: .35rem .9rem;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: .82rem;
+    transition: all .2s;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    background: var(--purple);
+    border-color: var(--purple-light);
+    color: #fff;
+  }
+  .library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: .8rem;
+  }
+  .lib-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: .8rem;
+    cursor: pointer;
+    transition: all .3s;
+    text-align: center;
+  }
+  .lib-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+  }
+  .lib-card .lib-symbol { font-size: 2rem; margin-bottom: .4rem; }
+  .lib-card h4 { color: var(--gold); font-size: .8rem; margin-bottom: .2rem; }
+  .lib-card p { color: var(--text-dim); font-size: .7rem; }
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    border-radius: 14px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    position: relative;
+    animation: fadeIn .3s ease;
+  }
+  .modal-close {
+    position: absolute;
+    top: .8rem; right: .8rem;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.3rem;
+    cursor: pointer;
+  }
+  .modal h2 { color: var(--gold); margin-bottom: .3rem; }
+  .modal .modal-sub { color: var(--text-dim); font-size: .8rem; margin-bottom: 1rem; }
+  .modal-symbol { font-size: 3rem; text-align: center; margin-bottom: 1rem; }
+  .modal-fortune-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .7rem;
+    margin-top: 1rem;
+  }
+  .modal-fortune-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .7rem;
+  }
+  .modal-fortune-item h5 { color: var(--gold); font-size: .8rem; margin-bottom: .3rem; }
+  .modal-fortune-item p { color: var(--text-dim); font-size: .75rem; line-height: 1.5; }
+  /* Overall fortune summary with stars */
+  .fortune-summary {
+    background: linear-gradient(135deg, rgba(107,63,160,.2), rgba(201,168,76,.1));
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .fortune-summary h3 { color: var(--gold); margin-bottom: .5rem; }
+  .fortune-summary p { color: var(--text); font-size: .9rem; line-height: 1.7; }
+  .overall-stars { font-size: 1.3rem; margin-bottom: .5rem; }
+  /* Star rating bar */
+  .star-bar { display: flex; align-items: center; gap: .5rem; margin: .3rem 0; }
+  .star-bar span { color: var(--text-dim); font-size: .8rem; width: 50px; }
+  .star-fill { color: #f0d080; font-size: .85rem; }
+  /* Responsive */
+  @media (max-width: 600px) {
+    header h1 { font-size: 1.7rem; }
+    .deck-grid { grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); }
+    .fortune-grid { grid-template-columns: 1fr 1fr; }
+    .modal-fortune-grid { grid-template-columns: 1fr; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,.15), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.2rem 0;
+  }
+  .tip-box {
+    background: rgba(107,63,160,.15);
+    border-left: 3px solid var(--purple-light);
+    padding: .7rem 1rem;
+    border-radius: 0 8px 8px 0;
+    font-size: .82rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔮 무료 타로카드 운세</h1>
+  <p>78장의 타로카드로 당신의 운명을 읽어드립니다</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('home')">🏠 홈</button>
+  <button class="tab-btn" onclick="showTab('reading')">🃏 카드 뽑기</button>
+  <button class="tab-btn" onclick="showTab('library')">📚 카드 사전</button>
+</div>
+
+<!-- HOME TAB -->
+<div id="tab-home" class="screen active">
+  <div class="tip-box">💡 타로카드는 오락·자기 성찰 목적으로 즐겨 주세요. 중요한 결정은 전문가와 상담하세요.</div>
+  <h2 style="color:var(--gold); margin-bottom:.5rem;">스프레드 선택</h2>
+  <p style="color:var(--text-dim); font-size:.85rem; margin-bottom:1rem;">원하는 리딩 방식을 선택하세요</p>
+  <div class="spread-grid">
+    <div class="spread-card" onclick="startReading(1)">
+      <div class="icon">🌟</div>
+      <h3>원카드 리딩</h3>
+      <p>오늘의 운세·핵심 메시지<br>카드 1장 선택</p>
+    </div>
+    <div class="spread-card" onclick="startReading(3)">
+      <div class="icon">🌙</div>
+      <h3>과거·현재·미래</h3>
+      <p>시간의 흐름으로 보는<br>3카드 스프레드</p>
+    </div>
+    <div class="spread-card" onclick="startReading(5)">
+      <div class="icon">⭐</div>
+      <h3>5카드 스프레드</h3>
+      <p>상황·행동·도전·결과·조언<br>종합적인 분석</p>
+    </div>
+    <div class="spread-card" onclick="startReading(10)">
+      <div class="icon">✨</div>
+      <h3>켈틱 크로스</h3>
+      <p>가장 전통적인 10카드<br>심층 운세 분석</p>
+    </div>
+  </div>
+</div>
+
+<!-- READING TAB -->
+<div id="tab-reading" class="screen">
+  <div id="reading-area">
+    <div class="reading-info">
+      <div>
+        <h2 id="spread-title">스프레드를 선택해주세요</h2>
+        <span id="spread-desc"></span>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <button class="btn" onclick="shuffleDeck()">🔀 셔플</button>
+        <button class="btn btn-gold" id="reveal-btn" onclick="revealReading()" style="display:none">✨ 결과 보기</button>
+        <button class="btn" onclick="resetReading()">↺ 다시하기</button>
+        <button class="btn" onclick="showTab('home')">← 스프레드 선택</button>
+      </div>
+    </div>
+    <div class="slots-row" id="slots-row"></div>
+    <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:.8rem;" id="pick-guide">홈에서 스프레드를 선택해주세요</p>
+    <div class="deck-grid" id="deck-grid"></div>
+    <div id="result-panel"></div>
+  </div>
+</div>
+
+<!-- LIBRARY TAB -->
+<div id="tab-library" class="screen">
+  <div class="library-header">
+    <strong style="color:var(--text-dim);font-size:.85rem;">필터:</strong>
+    <button class="filter-btn active" onclick="filterLibrary('all', this)">전체 (78)</button>
+    <button class="filter-btn" onclick="filterLibrary('major', this)">메이저 아르카나 (22)</button>
+    <button class="filter-btn" onclick="filterLibrary('wands', this)">완드 (14)</button>
+    <button class="filter-btn" onclick="filterLibrary('cups', this)">컵 (14)</button>
+    <button class="filter-btn" onclick="filterLibrary('swords', this)">소드 (14)</button>
+    <button class="filter-btn" onclick="filterLibrary('pentacles', this)">펜타클 (14)</button>
+  </div>
+  <div class="library-grid" id="library-grid"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ============================================================
+// CARD DATA - 78장
+// ============================================================
+const SUITS = {
+  major: { name: '메이저 아르카나', color: '#c9a84c', bg: '#2a1a0a' },
+  wands: { name: '완드', color: '#e05a20', bg: '#2a0e0a', symbol: '🔥' },
+  cups:  { name: '컵',  color: '#4090d0', bg: '#0a1a2a', symbol: '💧' },
+  swords:{ name: '소드',color: '#a0b0c0', bg: '#0a1520', symbol: '⚔️' },
+  pentacles:{ name:'펜타클', color:'#50c050', bg:'#0a200a', symbol:'🌿' }
+};
+
+const MAJOR_SYMBOLS = ['🤡','🎩','🌙','👸','👑','⛪','❤️','🏆','💪','🕯️','🎡','⚖️','🙃','💀','🌊','😈','🗼','⭐','🌙','☀️','📯','🌍'];
+const NUM_SYMBOLS = ['A','2','3','4','5','6','7','8','9','10','👤','🐴','♛','♚'];
+
+function makeFortune(love, career, marriage, wealth, luck) {
+  return { love, career, marriage, wealth, luck };
+}
+
+// Major Arcana complete data
+const MAJOR_ARCANA = [
+  {
+    id: 'major_0', suit: 'major', num: 0, symbol: '🤡',
+    name: '바보 (The Fool)',
+    nameEn: 'The Fool',
+    keywords: ['새로운 시작','자유','순수','모험','가능성'],
+    meaning: '새로운 시작과 무한한 가능성을 상징합니다. 두려움 없이 새로운 여정을 떠나는 순수한 영혼을 나타내며, 예측 불가능한 모험이 기다리고 있습니다.',
+    fortune: makeFortune(
+      '설레는 새 인연이 예상치 못한 곳에서 찾아올 수 있어요. 자유로운 마음으로 다가오는 인연을 받아들여보세요.',
+      '새로운 직업이나 프로젝트의 시작에 좋은 에너지가 흐릅니다. 과감하게 도전해보세요.',
+      '결혼에 대한 신선한 시각으로 접근하세요. 전통에 얽매이지 않는 새로운 형태의 사랑도 좋아요.',
+      '투자나 재정 결정에 신중함이 필요합니다. 흥분에 휩쓸려 경솔한 선택을 하지 않도록 주의하세요.',
+      '행운의 기회가 갑자기 찾아올 수 있으니 항상 열린 마음을 유지하세요. 직감을 믿어보세요.'
+    ),
+    stars: { love: 4, career: 5, marriage: 3, wealth: 2, luck: 5 }
+  },
+  {
+    id: 'major_1', suit: 'major', num: 1, symbol: '🎩',
+    name: '마법사 (The Magician)',
+    nameEn: 'The Magician',
+    keywords: ['의지력','능력','집중','창조','기술'],
+    meaning: '모든 도구와 능력을 갖추고 원하는 것을 현실로 만들어낼 수 있는 힘을 상징합니다. 집중력과 의지로 목표를 이룰 때입니다.',
+    fortune: makeFortune(
+      '당신의 매력이 최고조에 달해 있습니다. 원하는 상대에게 적극적으로 다가가면 좋은 결과가 있을 것입니다.',
+      '뛰어난 능력과 기술이 인정받는 시기입니다. 원하는 직위나 프로젝트를 당당히 요청해보세요.',
+      '결혼 준비에 필요한 모든 것이 갖추어져 있습니다. 계획을 실행에 옮길 최적의 시기입니다.',
+      '재정적 능력을 발휘할 기회가 있습니다. 기술과 지식을 활용한 수익 창출이 가능합니다.',
+      '강한 의지와 집중력으로 원하는 것을 끌어당기는 힘이 있습니다. 긍정적인 마음을 가지세요.'
+    ),
+    stars: { love: 5, career: 5, marriage: 4, wealth: 5, luck: 4 }
+  },
+  {
+    id: 'major_2', suit: 'major', num: 2, symbol: '🌙',
+    name: '여사제 (The High Priestess)',
+    nameEn: 'The High Priestess',
+    keywords: ['직관','신비','내면의 지혜','비밀','잠재력'],
+    meaning: '깊은 직관과 숨겨진 지식을 상징합니다. 논리보다 내면의 목소리와 직감에 귀를 기울여야 할 때입니다.',
+    fortune: makeFortune(
+      '상대방의 진심을 꿰뚫어 보는 직관이 있습니다. 겉모습이 아닌 내면을 바라보는 관계를 만들어가세요.',
+      '겉으로 드러나지 않는 부분에서 기회가 있습니다. 소문이나 정보에 귀를 기울이세요.',
+      '결혼 상대의 진정한 내면을 파악하는 것이 중요합니다. 서두르지 말고 충분한 시간을 갖으세요.',
+      '숨겨진 재정 기회가 있을 수 있습니다. 직감을 믿고 신중하게 투자를 검토해보세요.',
+      '내면의 지혜가 당신을 올바른 방향으로 이끌고 있습니다. 명상이나 반성의 시간을 가져보세요.'
+    ),
+    stars: { love: 3, career: 4, marriage: 4, wealth: 3, luck: 4 }
+  },
+  {
+    id: 'major_3', suit: 'major', num: 3, symbol: '👸',
+    name: '여황제 (The Empress)',
+    nameEn: 'The Empress',
+    keywords: ['풍요','창조성','모성','자연','번성'],
+    meaning: '풍요, 창조성, 모성적 사랑을 상징합니다. 삶의 모든 영역에서 풍요로움과 번영이 흘러넘치는 시기를 나타냅니다.',
+    fortune: makeFortune(
+      '사랑이 꽃피는 황금기입니다. 깊고 성숙한 감정의 교류가 이루어지며 관계가 더욱 풍요로워집니다.',
+      '창의적인 프로젝트나 예술적 분야에서 큰 성과를 낼 수 있습니다. 새로운 아이디어를 마음껏 펼쳐보세요.',
+      '결혼과 가정에 매우 긍정적인 에너지입니다. 가족의 화합과 풍요로운 가정 생활을 기대할 수 있습니다.',
+      '재물운이 좋습니다. 창의적인 아이디어나 사업으로 수익을 올릴 수 있는 좋은 시기입니다.',
+      '자연의 흐름에 따라 좋은 일들이 자연스럽게 찾아올 것입니다. 긍정적인 에너지가 넘칩니다.'
+    ),
+    stars: { love: 5, career: 4, marriage: 5, wealth: 5, luck: 5 }
+  },
+  {
+    id: 'major_4', suit: 'major', num: 4, symbol: '👑',
+    name: '황제 (The Emperor)',
+    nameEn: 'The Emperor',
+    keywords: ['권위','안정','구조','리더십','보호'],
+    meaning: '권위, 안정, 강한 리더십을 상징합니다. 질서를 세우고 안정적인 기반을 구축하는 힘을 나타냅니다.',
+    fortune: makeFortune(
+      '안정적이고 책임감 있는 파트너십이 형성됩니다. 서로에 대한 존중과 신뢰가 관계의 기반이 됩니다.',
+      '리더십을 발휘할 기회가 찾아옵니다. 체계적이고 계획적인 접근으로 직업적 성공을 이룰 수 있습니다.',
+      '안정적인 결혼 생활을 위한 탄탄한 기반이 마련됩니다. 책임감 있는 파트너와의 만남이 예상됩니다.',
+      '안정적인 재정 관리가 이루어집니다. 장기적인 재정 계획을 세우고 실행에 옮기기 좋은 시기입니다.',
+      '노력한 것들이 안정적으로 결실을 맺는 시기입니다. 인내와 꾸준함이 행운을 불러옵니다.'
+    ),
+    stars: { love: 3, career: 5, marriage: 5, wealth: 5, luck: 4 }
+  },
+  {
+    id: 'major_5', suit: 'major', num: 5, symbol: '⛪',
+    name: '교황 (The Hierophant)',
+    nameEn: 'The Hierophant',
+    keywords: ['전통','종교','가르침','관습','도덕'],
+    meaning: '전통, 규범, 종교적 가르침을 상징합니다. 확립된 관습과 제도 안에서 지혜를 찾고 멘토의 가르침을 받아들이는 시기입니다.',
+    fortune: makeFortune(
+      '전통적인 방식의 만남이나 소개팅이 효과적입니다. 가족과 주변의 축복을 받는 관계가 형성됩니다.',
+      '조직 내에서 전문성을 인정받을 수 있습니다. 선배나 멘토의 조언을 따르는 것이 도움이 됩니다.',
+      '전통적인 결혼식이나 의례를 중시하세요. 양가 가족의 동의와 지지가 중요한 시기입니다.',
+      '안정적이고 전통적인 투자 방식이 가장 좋은 결과를 가져옵니다. 검증된 방법을 따르세요.',
+      '관습과 규칙을 따름으로써 행운이 찾아옵니다. 인맥과 사회적 연결을 통한 기회가 있습니다.'
+    ),
+    stars: { love: 3, career: 4, marriage: 5, wealth: 3, luck: 3 }
+  },
+  {
+    id: 'major_6', suit: 'major', num: 6, symbol: '❤️',
+    name: '연인 (The Lovers)',
+    nameEn: 'The Lovers',
+    keywords: ['사랑','선택','결합','조화','가치'],
+    meaning: '깊은 사랑과 중요한 선택의 기로를 상징합니다. 진정한 가치와 믿음에 따른 선택이 삶의 방향을 결정짓는 순간입니다.',
+    fortune: makeFortune(
+      '진정한 사랑이 찾아오거나 현재 관계가 더욱 깊어집니다. 마음에서 우러나오는 선택을 하세요.',
+      '직업적 선택의 기로에 서 있을 수 있습니다. 진정으로 원하는 것을 선택하면 큰 만족을 얻습니다.',
+      '결혼에 매우 긍정적인 신호입니다. 진정한 파트너와의 깊은 결합이 이루어질 수 있습니다.',
+      '재정적 결정을 내려야 할 시기입니다. 장기적인 이익을 위한 현명한 선택이 중요합니다.',
+      '마음을 따르는 선택이 행운을 가져다 줍니다. 두 가지 선택지 중 진심에 귀를 기울이세요.'
+    ),
+    stars: { love: 5, career: 4, marriage: 5, wealth: 3, luck: 4 }
+  },
+  {
+    id: 'major_7', suit: 'major', num: 7, symbol: '🏆',
+    name: '전차 (The Chariot)',
+    nameEn: 'The Chariot',
+    keywords: ['승리','의지','통제','진전','자신감'],
+    meaning: '강한 의지와 자기 통제력으로 장애물을 극복하고 승리를 쟁취하는 것을 상징합니다. 목표를 향해 전진하는 강인한 힘입니다.',
+    fortune: makeFortune(
+      '적극적인 추진력으로 좋아하는 사람에게 다가가세요. 자신감 있는 모습이 매력적으로 보입니다.',
+      '경쟁에서 이기고 목표를 달성하는 시기입니다. 강한 의지와 추진력으로 성공을 거두세요.',
+      '결혼을 향해 적극적으로 나아가세요. 장애물이 있더라도 의지로 극복할 수 있습니다.',
+      '재정적 목표를 향해 강하게 나아가세요. 집중적인 노력이 결실을 맺는 시기입니다.',
+      '강한 의지와 집중력이 행운의 원동력입니다. 포기하지 않으면 원하는 것을 얻을 수 있습니다.'
+    ),
+    stars: { love: 4, career: 5, marriage: 4, wealth: 4, luck: 4 }
+  },
+  {
+    id: 'major_8', suit: 'major', num: 8, symbol: '💪',
+    name: '힘 (Strength)',
+    nameEn: 'Strength',
+    keywords: ['용기','인내','내면의 힘','온화함','자제력'],
+    meaning: '내면의 강인함과 용기, 부드러운 인내심으로 강한 것도 다스릴 수 있음을 상징합니다. 진정한 힘은 폭력이 아닌 마음에서 나옵니다.',
+    fortune: makeFortune(
+      '인내심과 따뜻함으로 관계를 유지하세요. 강압보다 이해와 포용이 사랑을 키웁니다.',
+      '어려운 상황도 침착하게 극복하는 능력이 인정받습니다. 내면의 강인함으로 위기를 기회로 만드세요.',
+      '서로의 다름을 수용하는 포용력이 좋은 결혼 생활을 만들어갑니다. 인내와 이해가 중요합니다.',
+      '재정적 어려움도 강한 의지로 극복할 수 있습니다. 포기하지 않고 꾸준히 노력하세요.',
+      '내면의 용기와 인내가 행운을 만들어냅니다. 두려움을 극복하면 새로운 가능성이 열립니다.'
+    ),
+    stars: { love: 4, career: 4, marriage: 5, wealth: 3, luck: 4 }
+  },
+  {
+    id: 'major_9', suit: 'major', num: 9, symbol: '🕯️',
+    name: '은둔자 (The Hermit)',
+    nameEn: 'The Hermit',
+    keywords: ['내면 탐구','고독','지혜','성찰','안내'],
+    meaning: '홀로 내면을 탐구하며 깊은 지혜를 얻는 시기를 상징합니다. 외부의 소음에서 벗어나 자신만의 빛을 찾아가는 여정입니다.',
+    fortune: makeFortune(
+      '혼자만의 시간을 통해 진정한 자신을 발견하세요. 지금은 새로운 만남보다 내면 성찰이 더 중요합니다.',
+      '독립적인 작업이나 연구에서 큰 성과를 낼 수 있습니다. 혼자만의 전문성을 키워나가세요.',
+      '결혼 전 진지한 자기 탐구가 필요한 시기입니다. 혼자만의 시간을 충분히 가진 후 결정하세요.',
+      '독립적인 재정 계획을 세우고 실행하기 좋은 시기입니다. 전문가의 조언을 구해보세요.',
+      '조용한 성찰 속에서 중요한 깨달음이 찾아올 것입니다. 직관의 빛을 따라가세요.'
+    ),
+    stars: { love: 2, career: 4, marriage: 2, wealth: 3, luck: 3 }
+  },
+  {
+    id: 'major_10', suit: 'major', num: 10, symbol: '🎡',
+    name: '운명의 수레바퀴 (Wheel of Fortune)',
+    nameEn: 'Wheel of Fortune',
+    keywords: ['변화','운명','순환','행운','전환점'],
+    meaning: '운명의 큰 전환점을 상징합니다. 예상치 못한 변화와 행운이 찾아오며, 삶의 사이클이 새로운 국면으로 접어드는 시기입니다.',
+    fortune: makeFortune(
+      '운명적인 만남이 예상됩니다. 우연처럼 보이는 인연이 사실은 운명일 수 있으니 기회를 놓치지 마세요.',
+      '직업 운에 큰 전환점이 찾아옵니다. 좋은 기회가 예상치 못한 곳에서 올 수 있습니다.',
+      '결혼 운이 급격히 좋아지는 시기입니다. 운명의 흐름에 몸을 맡기면 좋은 결과가 있습니다.',
+      '재물운이 크게 상승하는 시기입니다. 행운의 흐름을 잘 타면 큰 수익을 얻을 수 있습니다.',
+      '커다란 행운이 찾아오는 시기입니다. 복권이나 뜻밖의 기회를 놓치지 마세요.'
+    ),
+    stars: { love: 4, career: 5, marriage: 4, wealth: 5, luck: 5 }
+  },
+  {
+    id: 'major_11', suit: 'major', num: 11, symbol: '⚖️',
+    name: '정의 (Justice)',
+    nameEn: 'Justice',
+    keywords: ['공정','균형','진실','책임','법'],
+    meaning: '공정함, 진실, 균형을 상징합니다. 모든 행동에는 결과가 따르며, 정직하고 공정한 자세가 올바른 결과를 가져옵니다.',
+    fortune: makeFortune(
+      '솔직하고 공정한 관계를 추구하세요. 거짓이나 위선 없이 진실된 감정을 표현하는 것이 중요합니다.',
+      '공정한 평가를 받게 됩니다. 실력대로 인정받는 시기이니 최선을 다해 노력하세요.',
+      '서로에게 공정하고 균형 잡힌 관계를 만들어가세요. 계약서나 법적 사항에 꼼꼼히 주의하세요.',
+      '재정적 결정에 있어 공정성이 중요합니다. 계약이나 법적 사항을 꼼꼼히 검토하세요.',
+      '정직하고 공정하게 행동하면 그에 맞는 보상이 돌아옵니다. 진실이 행운을 부릅니다.'
+    ),
+    stars: { love: 3, career: 4, marriage: 4, wealth: 4, luck: 3 }
+  },
+  {
+    id: 'major_12', suit: 'major', num: 12, symbol: '🙃',
+    name: '매달린 남자 (The Hanged Man)',
+    nameEn: 'The Hanged Man',
+    keywords: ['희생','기다림','새로운 시각','포기','수용'],
+    meaning: '자발적인 희생과 기다림을 통한 새로운 통찰을 상징합니다. 잠시 멈추고 다른 시각으로 상황을 바라볼 때가 왔습니다.',
+    fortune: makeFortune(
+      '지금은 적극적으로 나서기보다 상대방을 관찰하고 기다리는 시간이 필요합니다.',
+      '현재 직업적 상황에서 잠시 멈추고 재검토가 필요합니다. 다른 방향을 고려해보세요.',
+      '결혼을 서두르지 마세요. 충분한 시간을 갖고 관계를 신중하게 살펴보는 것이 필요합니다.',
+      '재정적 결정을 잠시 보류하고 관망하는 시기입니다. 조금 더 기다리면 더 좋은 기회가 옵니다.',
+      '지금은 결과보다 과정에 집중하세요. 기다림 속에서 더 큰 행운이 준비되고 있습니다.'
+    ),
+    stars: { love: 2, career: 2, marriage: 2, wealth: 2, luck: 3 }
+  },
+  {
+    id: 'major_13', suit: 'major', num: 13, symbol: '💀',
+    name: '죽음 (Death)',
+    nameEn: 'Death',
+    keywords: ['변화','끝','변환','해방','새로운 시작'],
+    meaning: '실제 죽음이 아닌 대대적인 변화와 전환을 상징합니다. 낡은 것의 끝은 새로운 것의 시작을 의미합니다.',
+    fortune: makeFortune(
+      '기존 관계의 형태가 크게 변화할 수 있습니다. 변화를 두려워하지 말고 새로운 단계로 나아가세요.',
+      '현재 직업이나 커리어에 큰 변화가 찾아옵니다. 변화를 받아들이면 더 좋은 기회로 이어집니다.',
+      '연애에서 결혼으로의 전환점이 될 수 있습니다. 새로운 단계로의 도약을 두려워하지 마세요.',
+      '재정 구조의 큰 변화가 있을 수 있습니다. 낡은 방식을 버리고 새로운 재테크를 시도해보세요.',
+      '낡은 것을 내려놓으면 새로운 행운이 찾아옵니다. 변화는 두려운 것이 아닌 성장의 기회입니다.'
+    ),
+    stars: { love: 3, career: 4, marriage: 3, wealth: 3, luck: 4 }
+  },
+  {
+    id: 'major_14', suit: 'major', num: 14, symbol: '🌊',
+    name: '절제 (Temperance)',
+    nameEn: 'Temperance',
+    keywords: ['균형','조화','인내','중용','치유'],
+    meaning: '균형과 조화, 인내를 상징합니다. 극단을 피하고 중용의 지혜로 삶의 모든 것을 조화롭게 통합하는 시기입니다.',
+    fortune: makeFortune(
+      '감정의 균형을 유지하는 것이 중요합니다. 서두르지 말고 천천히 관계를 발전시켜 나가세요.',
+      '일과 생활의 균형을 맞추는 것이 성공의 열쇠입니다. 꾸준하고 안정적인 발전이 이루어집니다.',
+      '서로의 다른 점을 조화롭게 통합하는 지혜가 필요합니다. 균형 잡힌 파트너십을 추구하세요.',
+      '재정적 균형을 유지하세요. 극단적인 투자나 지출보다 균형 잡힌 재정 관리가 중요합니다.',
+      '균형 잡힌 삶의 태도가 자연스럽게 행운을 불러옵니다. 인내하면 좋은 결과가 기다립니다.'
+    ),
+    stars: { love: 3, career: 4, marriage: 4, wealth: 3, luck: 4 }
+  },
+  {
+    id: 'major_15', suit: 'major', num: 15, symbol: '😈',
+    name: '악마 (The Devil)',
+    nameEn: 'The Devil',
+    keywords: ['속박','물질주의','집착','그림자','욕망'],
+    meaning: '물질적 욕망, 집착, 내면의 어둠을 상징합니다. 자신을 옭아매는 두려움이나 집착에서 벗어날 용기가 필요합니다.',
+    fortune: makeFortune(
+      '집착이나 의존적인 관계에 주의하세요. 진정한 사랑은 서로를 자유롭게 합니다.',
+      '물질적 욕망이나 지나친 야망이 오히려 발목을 잡을 수 있습니다. 균형을 찾아보세요.',
+      '의존적이거나 불건강한 관계 패턴을 점검하세요. 자유롭고 건강한 파트너십을 추구하세요.',
+      '돈에 대한 과도한 집착이나 부정적인 방법으로 재물을 추구하는 것을 조심하세요.',
+      '내면의 두려움과 집착을 극복해야 진정한 행운이 찾아옵니다. 부정적 패턴을 끊으세요.'
+    ),
+    stars: { love: 2, career: 2, marriage: 2, wealth: 2, luck: 2 }
+  },
+  {
+    id: 'major_16', suit: 'major', num: 16, symbol: '🗼',
+    name: '탑 (The Tower)',
+    nameEn: 'The Tower',
+    keywords: ['갑작스런 변화','붕괴','계시','혼돈','해방'],
+    meaning: '갑작스럽고 충격적인 변화, 기존 구조의 붕괴를 상징합니다. 무너지는 것처럼 보이지만 사실은 필요한 정화 과정입니다.',
+    fortune: makeFortune(
+      '갑작스러운 이별이나 관계의 위기가 올 수 있습니다. 하지만 이것이 더 좋은 인연을 위한 과정일 수 있어요.',
+      '직업적으로 예상치 못한 변화나 충격이 있을 수 있습니다. 위기 속에서 새로운 방향을 찾으세요.',
+      '결혼을 향한 계획에 방해나 장애물이 생길 수 있습니다. 근본적인 재검토가 필요할 수 있습니다.',
+      '재정적 손실이나 예상치 못한 지출이 발생할 수 있습니다. 비상금을 확보해두세요.',
+      '혼돈 속에서도 반드시 새로운 기회가 생겨납니다. 변화를 두려워하지 말고 적응하세요.'
+    ),
+    stars: { love: 1, career: 2, marriage: 1, wealth: 1, luck: 2 }
+  },
+  {
+    id: 'major_17', suit: 'major', num: 17, symbol: '⭐',
+    name: '별 (The Star)',
+    nameEn: 'The Star',
+    keywords: ['희망','영감','평화','재생','낙관'],
+    meaning: '희망, 영감, 평화를 상징합니다. 어두운 시간이 지나고 밝은 빛이 찾아오는 치유와 재생의 시기입니다.',
+    fortune: makeFortune(
+      '따뜻하고 순수한 사랑이 찾아옵니다. 마음을 열면 아름다운 인연을 만날 수 있습니다.',
+      '꿈꾸던 직업이나 프로젝트가 현실로 이루어질 희망이 보입니다. 긍정적인 마음을 유지하세요.',
+      '아름다운 결혼의 가능성이 높습니다. 순수하고 진실한 사랑이 결혼으로 이어질 수 있습니다.',
+      '재정적으로 희망적인 신호들이 보입니다. 꾸준히 노력하면 좋은 결과가 따라옵니다.',
+      '별처럼 빛나는 행운이 당신을 따라다니고 있습니다. 소원을 빌면 이루어질 수 있어요.'
+    ),
+    stars: { love: 5, career: 4, marriage: 5, wealth: 4, luck: 5 }
+  },
+  {
+    id: 'major_18', suit: 'major', num: 18, symbol: '🌙',
+    name: '달 (The Moon)',
+    nameEn: 'The Moon',
+    keywords: ['환상','두려움','혼란','무의식','직관'],
+    meaning: '환상과 현실의 경계가 흐려지는 시기를 상징합니다. 무의식의 세계와 두려움이 표면으로 떠오르며 명확함이 필요합니다.',
+    fortune: makeFortune(
+      '상대방의 진심이 불분명하게 느껴질 수 있습니다. 환상보다 현실을 직시하는 용기가 필요합니다.',
+      '직업 환경이 불확실하게 느껴질 수 있습니다. 섣불리 결정하지 말고 충분한 정보를 수집하세요.',
+      '결혼 상대에 대한 불확실함이 있습니다. 감정적 혼란이 가라앉을 때까지 기다리는 것이 좋습니다.',
+      '재정 관련 불확실성이 있습니다. 사기나 기만에 주의하고 계약서를 꼼꼼히 검토하세요.',
+      '지금은 행운보다 직관을 믿고 신중하게 행동하세요. 두려움이 판단을 흐리지 않도록 하세요.'
+    ),
+    stars: { love: 2, career: 2, marriage: 2, wealth: 2, luck: 2 }
+  },
+  {
+    id: 'major_19', suit: 'major', num: 19, symbol: '☀️',
+    name: '태양 (The Sun)',
+    nameEn: 'The Sun',
+    keywords: ['성공','기쁨','활력','낙관','명확함'],
+    meaning: '밝고 긍정적인 에너지, 성공, 기쁨을 상징합니다. 모든 것이 명확해지고 삶의 모든 영역에서 행복과 번성이 넘치는 최고의 시기입니다.',
+    fortune: makeFortune(
+      '사랑이 활짝 꽃피는 행복한 시기입니다. 상호 간의 따뜻한 감정이 넘치며 관계가 빛납니다.',
+      '직업적으로 최고의 성과를 낼 수 있는 시기입니다. 능력이 빛을 발하며 모든 것이 잘 풀립니다.',
+      '결혼에 최고의 에너지가 흐르고 있습니다. 행복하고 밝은 미래가 기다리고 있습니다.',
+      '재물운이 최고조입니다. 노력한 만큼 충분한 보상이 돌아오는 풍요로운 시기입니다.',
+      '최고의 행운이 당신을 감싸고 있습니다. 무엇을 하든 밝고 긍정적인 결과가 기다립니다.'
+    ),
+    stars: { love: 5, career: 5, marriage: 5, wealth: 5, luck: 5 }
+  },
+  {
+    id: 'major_20', suit: 'major', num: 20, symbol: '📯',
+    name: '심판 (Judgement)',
+    nameEn: 'Judgement',
+    keywords: ['각성','부활','결정','용서','새 출발'],
+    meaning: '깊은 각성과 재평가, 새로운 출발을 상징합니다. 과거를 돌아보고 용서하며 더 높은 단계로 나아가는 부활의 시기입니다.',
+    fortune: makeFortune(
+      '과거의 사랑을 다시 돌아보거나 이전 인연과의 재결합 가능성이 있습니다. 용서와 새 출발이 키워드입니다.',
+      '커리어에 대한 중요한 재평가와 새로운 방향 설정이 필요합니다. 과감한 결단이 새 길을 엽니다.',
+      '과거의 상처를 치유하고 새로운 관계를 시작할 준비가 되었습니다. 용서와 용기가 필요합니다.',
+      '재정에 대한 근본적인 재검토가 필요합니다. 잘못된 습관을 고치면 더 나은 미래가 기다립니다.',
+      '중요한 결단의 시기가 왔습니다. 과거에서 배운 교훈이 더 밝은 미래를 만들어줍니다.'
+    ),
+    stars: { love: 4, career: 4, marriage: 4, wealth: 3, luck: 4 }
+  },
+  {
+    id: 'major_21', suit: 'major', num: 21, symbol: '🌍',
+    name: '세계 (The World)',
+    nameEn: 'The World',
+    keywords: ['완성','성취','통합','여행','성공'],
+    meaning: '완전한 성취와 통합을 상징합니다. 긴 여정이 성공적으로 완성되고 새로운 사이클이 시작되는 최고의 결실의 시기입니다.',
+    fortune: makeFortune(
+      '완벽한 사랑의 완성을 나타냅니다. 오랜 기다림 끝에 진정한 사랑을 찾게 되거나 관계가 완성됩니다.',
+      '오랫동안 꿈꿔온 직업적 목표가 달성됩니다. 완전한 성공을 이루는 시기입니다.',
+      '아름다운 결혼으로 완성되는 시기입니다. 두 사람이 함께 만들어갈 밝은 미래가 기다립니다.',
+      '재정적으로 완전한 성공을 이루는 시기입니다. 오랫동안 쌓아온 노력이 결실을 맺습니다.',
+      '최상의 행운이 모든 분야에 걸쳐 찾아옵니다. 이보다 더 좋을 수 없는 최고의 타이밍입니다.'
+    ),
+    stars: { love: 5, career: 5, marriage: 5, wealth: 5, luck: 5 }
+  }
+];
+
+// Minor Arcana generator
+function makeMinor(suit, num, numIdx) {
+  const suitData = SUITS[suit];
+  const numNames = ['에이스','2','3','4','5','6','7','8','9','10','페이지','나이트','퀸','킹'];
+  const suitKo = { wands: '완드', cups: '컵', swords: '소드', pentacles: '펜타클' };
+  const symbol = NUM_SYMBOLS[numIdx];
+
+  // Base meanings per suit
+  const suitMeaning = {
+    wands: ['열정과 창의성','새로운 도전을 향한 에너지','성장과 확장','투쟁과 경쟁','장기 계획과 비전'],
+    cups:  ['감정과 직관','관계와 연결','창의적 상상력','내면의 감정 탐구','꿈과 환상'],
+    swords:['지성과 분석','갈등과 도전','의사소통','결단력','진실 추구'],
+    pentacles:['물질과 현실','재정과 자원','안정과 풍요','인내와 노력','실용적 성취']
+  };
+
+  const meanings = suitMeaning[suit];
+  const m = meanings[numIdx % 5];
+
+  const loveMap = {
+    wands: ['열정적인 새 만남의 시작','관계에서 자신감을 가지세요','관계가 활기차게 성장하고 있어요','갈등이 있지만 극복하면 더 단단해져요','함께하는 미래를 그려보세요'],
+    cups: ['풍부한 감정이 흐르는 만남','감성적인 교류가 깊어지는 시기','사랑이 무르익어 가고 있어요','감정적 충만함을 느끼는 관계','진심 어린 고백이 효과적이에요'],
+    swords: ['명확한 의사소통이 필요해요','오해를 풀고 솔직해지세요','갈등이 있지만 대화로 해결 가능해요','선택의 기로에서 마음을 따르세요','새로운 시작을 위한 정리가 필요해요'],
+    pentacles: ['안정적이고 현실적인 사랑','서로 신뢰를 쌓아가는 관계','물질적 기반이 관계에 도움이 돼요','꾸준한 노력이 관계를 성장시켜요','현실적인 파트너와의 깊은 유대']
+  };
+  const careerMap = {
+    wands: ['새 프로젝트를 시작하기 좋은 시기','창의적인 아이디어를 펼쳐보세요','성장 기회가 찾아오고 있어요','경쟁에서 강인하게 버텨보세요','큰 그림을 그리고 계획하세요'],
+    cups: ['감성을 활용하는 직업이 잘 맞아요','협업 관계에서 시너지가 납니다','창의적 프로젝트에서 두각을 나타내요','내적 동기를 찾는 것이 중요해요','직업적 꿈을 향해 나아가세요'],
+    swords: ['분석력과 전략이 빛을 발하는 시기','솔직한 피드백을 받아들이세요','도전을 극복하면 성장이 있어요','빠른 결단이 필요한 상황이에요','새로운 방향으로의 전환을 고려하세요'],
+    pentacles: ['안정적인 직업운이 흐르고 있어요','꾸준한 노력이 인정받는 시기','재정적 성과가 기대됩니다','실용적인 기술이 빛을 발해요','장기적인 투자가 결실 맺는 시기']
+  };
+  const wealthMap = {
+    wands: ['활기찬 재정 에너지','새로운 수익 창출 기회','성장하는 재정 상황','일시적 어려움 후 회복','장기 계획이 결실을 맺어요'],
+    cups: ['감정에 치우친 소비 주의','선물이나 지원을 받을 수 있어요','꾸준히 모이는 재물','직관을 믿는 투자','꿈꾸던 재정 목표에 가까워져요'],
+    swords: ['지출에 신중하게 주의하세요','재정적 결단이 필요한 시기','손실 후 회복의 가능성','명확한 재정 계획이 필요해요','새로운 재정 전략으로 전환하세요'],
+    pentacles: ['안정적인 재물운','꾸준한 저축이 빛을 발해요','부가 쌓이는 좋은 시기','재정적 안정의 기반 구축','풍요로운 재물운이 흐르고 있어요']
+  };
+
+  const li = numIdx % 5;
+  return {
+    id: `${suit}_${numIdx}`,
+    suit,
+    num: numIdx,
+    symbol: suitData.symbol,
+    name: `${numNames[numIdx]} 오브 ${suitKo[suit]}`,
+    nameEn: `${numNames[numIdx]} of ${suit.charAt(0).toUpperCase()+suit.slice(1)}`,
+    keywords: [m, suitData.name, numNames[numIdx], '탐구', '성장'],
+    meaning: `${numNames[numIdx]} 오브 ${suitKo[suit]}는 ${m}을(를) 상징합니다. ${suitData.name} 슈트의 에너지가 ${numNames[numIdx]} 번호와 결합하여 독특한 메시지를 전달합니다.`,
+    fortune: makeFortune(
+      loveMap[suit][li],
+      careerMap[suit][li],
+      `결혼 관련하여 ${m}의 에너지가 흐릅니다. 현실적이고 성숙한 시각으로 접근하세요.`,
+      wealthMap[suit][li],
+      `${m}의 에너지가 행운을 만들어줍니다. 긍정적인 에너지를 유지하세요.`
+    ),
+    stars: {
+      love: 2 + (numIdx % 4),
+      career: 2 + ((numIdx + 1) % 4),
+      marriage: 2 + ((numIdx + 2) % 4),
+      wealth: 2 + ((numIdx + 3) % 4),
+      luck: 2 + ((numIdx) % 4)
+    }
+  };
+}
+
+// Build complete 78-card deck
+const MINOR_ARCANA = [];
+['wands','cups','swords','pentacles'].forEach(suit => {
+  for (let i = 0; i < 14; i++) {
+    MINOR_ARCANA.push(makeMinor(suit, i, i));
+  }
+});
+
+const ALL_CARDS = [...MAJOR_ARCANA, ...MINOR_ARCANA];
+
+// ============================================================
+// SPREAD CONFIG
+// ============================================================
+const SPREADS = {
+  1: {
+    name: '원카드 리딩',
+    count: 1,
+    positions: ['오늘의 메시지'],
+    desc: '오늘의 핵심 에너지와 메시지'
+  },
+  3: {
+    name: '과거·현재·미래',
+    count: 3,
+    positions: ['과거', '현재', '미래'],
+    desc: '시간의 흐름으로 보는 3카드 스프레드'
+  },
+  5: {
+    name: '5카드 스프레드',
+    count: 5,
+    positions: ['현재 상황', '도전/장애', '과거 영향', '조언', '결과'],
+    desc: '종합적인 상황 분석'
+  },
+  10: {
+    name: '켈틱 크로스',
+    count: 10,
+    positions: ['현재', '도전', '과거', '미래', '목표', '무의식', '외부영향', '희망/두려움', '조언', '최종결과'],
+    desc: '전통적인 켈틱 크로스 심층 분석'
+  }
+};
+
+// ============================================================
+// APP STATE
+// ============================================================
+let currentSpread = null;
+let shuffledDeck = [];
+let selectedCards = [];
+let requiredCount = 0;
+
+function showTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const idx = ['home','reading','library'].indexOf(tab);
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  if (tab === 'library') renderLibrary('all');
+}
+
+function startReading(count) {
+  currentSpread = SPREADS[count];
+  requiredCount = count;
+  selectedCards = [];
+  shuffledDeck = [...ALL_CARDS].sort(() => Math.random() - .5);
+  showTab('reading');
+  renderReadingUI();
+}
+
+function renderReadingUI() {
+  if (!currentSpread) return;
+  document.getElementById('spread-title').textContent = currentSpread.name;
+  document.getElementById('spread-desc').textContent = currentSpread.desc;
+  document.getElementById('pick-guide').textContent = `카드를 ${requiredCount}장 선택하세요 (${selectedCards.length}/${requiredCount})`;
+  document.getElementById('reveal-btn').style.display = selectedCards.length === requiredCount ? 'inline-block' : 'none';
+
+  // Render slots
+  const slotsRow = document.getElementById('slots-row');
+  slotsRow.innerHTML = '';
+  currentSpread.positions.forEach((pos, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'slot' + (selectedCards[i] ? ' filled' : '');
+    slot.innerHTML = selectedCards[i]
+      ? `<div class="slot-card-symbol">${selectedCards[i].symbol}</div><div class="slot-card-name">${selectedCards[i].name}</div><div class="slot-label">${pos}</div>`
+      : `<div style="font-size:1.4rem;opacity:.4">?</div><div class="slot-label">${pos}</div>`;
+    slotsRow.appendChild(slot);
+  });
+
+  // Render deck
+  renderDeck();
+  document.getElementById('result-panel').classList.remove('show');
+  document.getElementById('result-panel').innerHTML = '';
+}
+
+function renderDeck() {
+  const grid = document.getElementById('deck-grid');
+  grid.innerHTML = '';
+  shuffledDeck.forEach((card, i) => {
+    const isSelected = selectedCards.includes(card);
+    const isDisabled = !isSelected && selectedCards.length >= requiredCount;
+    const el = document.createElement('div');
+    el.className = `deck-card${isSelected ? ' selected' : ''}${isDisabled ? ' disabled' : ''}`;
+    el.innerHTML = `
+      <div class="deck-card-inner">
+        <div class="card-back"></div>
+        <div class="card-face">
+          <div class="card-symbol">${card.symbol}</div>
+          <div class="card-name">${card.name}</div>
+        </div>
+      </div>`;
+    el.addEventListener('click', () => toggleCard(card, el));
+    grid.appendChild(el);
+  });
+}
+
+function toggleCard(card, el) {
+  if (selectedCards.includes(card)) {
+    selectedCards = selectedCards.filter(c => c !== card);
+    el.classList.remove('selected');
+  } else if (selectedCards.length < requiredCount) {
+    selectedCards.push(card);
+    el.classList.add('selected');
+  }
+  renderReadingUI();
+}
+
+function shuffleDeck() {
+  shuffledDeck = [...ALL_CARDS].sort(() => Math.random() - .5);
+  selectedCards = [];
+  renderReadingUI();
+}
+
+function resetReading() {
+  selectedCards = [];
+  shuffledDeck = [...ALL_CARDS].sort(() => Math.random() - .5);
+  renderReadingUI();
+}
+
+function starsStr(n) {
+  const full = Math.round(Math.max(1, Math.min(5, n)));
+  return '★'.repeat(full) + '☆'.repeat(5 - full);
+}
+
+function avgStars(cards, key) {
+  return cards.reduce((a, c) => a + (c.stars[key] || 3), 0) / cards.length;
+}
+
+function revealReading() {
+  if (selectedCards.length < requiredCount) return;
+  const panel = document.getElementById('result-panel');
+
+  const cards = selectedCards;
+  const spread = currentSpread;
+
+  // Compute averages
+  const avg = {
+    love: avgStars(cards, 'love'),
+    career: avgStars(cards, 'career'),
+    marriage: avgStars(cards, 'marriage'),
+    wealth: avgStars(cards, 'wealth'),
+    luck: avgStars(cards, 'luck')
+  };
+  const overallAvg = (avg.love + avg.career + avg.marriage + avg.wealth + avg.luck) / 5;
+
+  // Selected cards display
+  const cardsHtml = cards.map((c, i) => `
+    <div class="result-card-item">
+      <div class="big-symbol">${c.symbol}</div>
+      <h3>${c.name}</h3>
+      <div class="position-name">${spread.positions[i]}</div>
+    </div>`).join('');
+
+  // Overall summary
+  const overallMsg = overallAvg >= 4.5
+    ? '매우 좋은 에너지가 흐르고 있습니다! 모든 방면에서 긍정적인 흐름이 보입니다.'
+    : overallAvg >= 3.5
+    ? '전반적으로 긍정적인 흐름입니다. 일부 주의할 부분도 있지만 희망적인 미래가 기다립니다.'
+    : overallAvg >= 2.5
+    ? '균형 잡힌 상황입니다. 좋은 면과 도전적인 면이 공존하니 신중하게 행동하세요.'
+    : '도전적인 시기를 지나고 있습니다. 하지만 이 어려움은 성장을 위한 과정임을 기억하세요.';
+
+  // Fortune sections
+  const fortuneHtml = `
+    <div class="fortune-grid">
+      ${[
+        { key: 'love', icon: '❤️', label: '연애운' },
+        { key: 'career', icon: '💼', label: '취업운' },
+        { key: 'marriage', icon: '💍', label: '결혼운' },
+        { key: 'wealth', icon: '💰', label: '재물운' },
+        { key: 'luck', icon: '🍀', label: '행운' }
+      ].map(f => `
+        <div class="fortune-item">
+          <h4>${f.icon} ${f.label} <span class="stars">${starsStr(avg[f.key])}</span></h4>
+          ${cards.map((c, i) => `
+            <p style="margin-bottom:.4rem;"><strong style="color:var(--gold-light);font-size:.75rem;">[${spread.positions[i]}] ${c.name}</strong><br>${c.fortune[f.key]}</p>
+          `).join('<hr class="divider">')}
+        </div>
+      `).join('')}
+    </div>`;
+
+  // Card meanings
+  const cardMeaningsHtml = cards.map((c, i) => `
+    <div class="card-detail" style="margin-top:.8rem;">
+      <h3>${c.symbol} ${c.name} <span style="color:var(--text-dim);font-size:.8rem;">(${spread.positions[i]})</span></h3>
+      <div class="keywords">${c.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('')}</div>
+      <p>${c.meaning}</p>
+      <div style="margin-top:.8rem;">
+        ${['love','career','marriage','wealth','luck'].map((k, ki) => {
+          const labels = ['연애운','취업운','결혼운','재물운','행운'];
+          return `<div class="star-bar"><span>${labels[ki]}</span><span class="star-fill">${starsStr(c.stars[k])}</span></div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="result-header">
+      <h2>🔮 ${spread.name} 결과</h2>
+      <p style="color:var(--text-dim);font-size:.82rem;">${new Date().toLocaleDateString('ko-KR')} · ${cards.length}카드 리딩</p>
+    </div>
+    <div class="selected-cards-display">${cardsHtml}</div>
+    <div class="fortune-summary">
+      <div class="overall-stars">${starsStr(overallAvg)}</div>
+      <h3>종합 운세</h3>
+      <p>${overallMsg}</p>
+    </div>
+    ${fortuneHtml}
+    <hr class="divider">
+    <h3 style="color:var(--gold);margin-bottom:.5rem;">📖 카드 상세 해석</h3>
+    ${cardMeaningsHtml}
+    <div style="text-align:center;margin-top:1.5rem;">
+      <button class="btn btn-gold" onclick="resetReading()">↺ 다시 뽑기</button>
+      <button class="btn" onclick="startReading(${requiredCount})" style="margin-left:.5rem;">🔀 같은 스프레드 재시도</button>
+    </div>`;
+  panel.classList.add('show');
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ============================================================
+// LIBRARY
+// ============================================================
+let currentFilter = 'all';
+function filterLibrary(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderLibrary(filter);
+}
+
+function renderLibrary(filter) {
+  const grid = document.getElementById('library-grid');
+  const cards = filter === 'all' ? ALL_CARDS
+    : filter === 'major' ? ALL_CARDS.filter(c => c.suit === 'major')
+    : ALL_CARDS.filter(c => c.suit === filter);
+
+  grid.innerHTML = cards.map(c => `
+    <div class="lib-card" onclick="showCardModal('${c.id}')">
+      <div class="lib-symbol">${c.symbol}</div>
+      <h4>${c.name}</h4>
+      <p>${c.keywords.slice(0,2).join(' · ')}</p>
+      <div style="font-size:.7rem;color:var(--gold);margin-top:.3rem;">${starsStr((c.stars.love + c.stars.luck) / 2)}</div>
+    </div>`).join('');
+}
+
+function showCardModal(cardId) {
+  const card = ALL_CARDS.find(c => c.id === cardId);
+  if (!card) return;
+  const modal = document.getElementById('modal-content');
+  modal.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-symbol">${card.symbol}</div>
+    <h2>${card.name}</h2>
+    <div class="modal-sub">${card.nameEn} · ${SUITS[card.suit].name}</div>
+    <div class="keywords">${card.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('')}</div>
+    <p style="color:var(--text);font-size:.88rem;line-height:1.7;margin:1rem 0;">${card.meaning}</p>
+    <hr class="divider">
+    <h3 style="color:var(--gold);font-size:.95rem;margin-bottom:.7rem;">운세별 해석</h3>
+    <div class="modal-fortune-grid">
+      <div class="modal-fortune-item">
+        <h5>❤️ 연애운 ${starsStr(card.stars.love)}</h5>
+        <p>${card.fortune.love}</p>
+      </div>
+      <div class="modal-fortune-item">
+        <h5>💼 취업운 ${starsStr(card.stars.career)}</h5>
+        <p>${card.fortune.career}</p>
+      </div>
+      <div class="modal-fortune-item">
+        <h5>💍 결혼운 ${starsStr(card.stars.marriage)}</h5>
+        <p>${card.fortune.marriage}</p>
+      </div>
+      <div class="modal-fortune-item">
+        <h5>💰 재물운 ${starsStr(card.stars.wealth)}</h5>
+        <p>${card.fortune.wealth}</p>
+      </div>
+      <div class="modal-fortune-item" style="grid-column:1/-1;">
+        <h5>🍀 행운 ${starsStr(card.stars.luck)}</h5>
+        <p>${card.fortune.luck}</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:1rem;">
+      <button class="btn btn-gold" onclick="closeModal(); startReading(1)">이 카드로 원카드 리딩</button>
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('show');
+  }
+}
+
+// Init
+shuffledDeck = [...ALL_CARDS].sort(() => Math.random() - .5);
+renderLibrary('all');
+</script>
+</body>
+</html>
